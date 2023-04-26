@@ -1,1 +1,1 @@
-// Archivo de prueba
+// Archivo de prueba para desarrollar el cliente del proyecto
