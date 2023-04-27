@@ -1,97 +1,110 @@
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <unistd.h>
-#define PORT 8080
-int main(int argc, char const* argv[])
-{
-    int server_fd, new_socket, valread;
-    struct sockaddr_in address;
-    int opt = 1;
-    int addrlen = sizeof(address);
-    char buffer[1024] = { 0 };
-    char* hello = "Hello from server";
-  
-    // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket failed");
-        exit(EXIT_FAILURE);
-    }
-  
-    // Forcefully attaching socket to the port 8080
-    if (setsockopt(server_fd, SOL_SOCKET,
-                   SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt))) {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
-  
-    // Forcefully attaching socket to the port 8080
-    if (bind(server_fd, (struct sockaddr*)&address,
-             sizeof(address))
-        < 0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
-    }
-    if (listen(server_fd, 3) < 0) {
-        perror("listen");
-        exit(EXIT_FAILURE);
-    }
-    if ((new_socket
-         = accept(server_fd, (struct sockaddr*)&address,
-                  (socklen_t*)&addrlen))
-        < 0) {
-        perror("accept");
-        exit(EXIT_FAILURE);
-    }
-    int count=0;
+#include <semaphore.h>
+#include "./sobel.c"
+
+#define CHUNK_SIZE 1024
+
+sem_t sem;
+
+void receive_image(int sockfd) {
+    FILE *fp;
+    char buffer[CHUNK_SIZE];
+    int newsockfd, n, counter = 0;
+    struct sockaddr_in cli_addr;
+    socklen_t clilen;
+
+    // Acepta conexiones entrantes
+   
+        sem_wait(&sem); // Decrementa el semáforo
+
+        clilen = sizeof(cli_addr);
+        newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+        if (newsockfd < 0) {
+            printf("Error al aceptar la conexión entrante\n");
+            exit(1);
+        }
+
+        // Crea un archivo para guardar la imagen recibida
+        char image_name[50];
+        sprintf(image_name, "imagenrecibida%d.jpg", counter++);
+        fp = fopen(image_name, "wb");
+        if (fp == NULL) {
+            printf("Error al crear el archivo de imagen\n");
+            exit(1);
+        }
+
+        // Recibe los chunks de la imagen y escribe en el archivo de imagen
+        while ((n = recv(newsockfd, buffer, CHUNK_SIZE, 0)) > 0) {
+            if (fwrite(buffer, 1, n, fp) != n) {
+                printf("Error al escribir los datos en el archivo de imagen\n");
+                exit(1);
+            }
+        }
+
+
+        // Espera a que todos los datos sean enviados
+        if (shutdown(newsockfd, SHUT_WR) < 0) {
+            printf("Error al cerrar el socket\n");
+            exit(1);
+        }
+
+        // Recibe cualquier dato adicional del socket
+        while (recv(newsockfd, buffer, CHUNK_SIZE, 0) > 0);
+
+        // Cierra el archivo
+        fclose(fp);
+        sobel("imagenrecibida0.jpg");
+        // Cierra el socket para esta conexión
+        close(newsockfd);
+
+        sem_post(&sem); // Incrementa el semáforo
     
-    valread = read(new_socket, buffer, 1);
-    int pagesize= buffer[0]+1;
-    printf("Index %d: %02X\n", 1, pagesize);
-    char imagebuffer[sizeof(char)*1024* pagesize];
-    while(1){
-        valread = read(new_socket, buffer, 1024);
-        if((unsigned char)buffer[0]=='$'){
-            printf("Message complete\n");
-            // closing the connected socket
-            close(new_socket);
-            // closing the listening socket
-            shutdown(server_fd, SHUT_RDWR);
-            break;
-        }
-        for (int i = 0; i < 1024; i++) {
-            int index = count*1024+1;
-            //imagebuffer[index] = buffer[i];
-            printf("Index %d Count %d: %02X\n", i,count, (unsigned char)buffer[i]);
-        }
-        send(new_socket, hello, strlen(hello), 0);
-        printf("Hello message sent\n");
-        count++;
-        
+}
 
-    }
+int main() {
+    int sockfd;
+    struct sockaddr_in serv_addr;
 
-    // Open a file for writing
-    FILE *file = fopen("output.txt", "w");
+    // Inicializa el semáforo con valor 1 (semaforo binario)
+    sem_init(&sem, 0, 1);
 
-    // Check if the file was opened successfully
-    if (file == NULL) {
-        printf("Error opening file!\n");
+    // Crea el socket
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        printf("Error al crear el socket\n");
         return 1;
     }
 
-    // Write the buffer to the file
-    fwrite(imagebuffer, sizeof(char), sizeof(imagebuffer), file);
+    // Configura la dirección del servidor
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(8080);
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
 
-    // Close the file
-    fclose(file);
+    // Asocia el socket con la dirección del servidor
+    if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        printf("Error al asociar el socket con la dirección del servidor\n");
+        return 1;
+    }
 
-    
+    // Acepta conexiones entrantes
+    while(1){
+
+        listen(sockfd, 5);
+        receive_image(sockfd);
+        printf("Escuchando");
+    }
+
+    // Destruye el semáforo
+    sem_destroy(&sem);
+
+
+    // Cierra el socket principal
+    close(sockfd);
+
     return 0;
 }

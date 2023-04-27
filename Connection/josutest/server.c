@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <semaphore.h>
+#include "./sobel.c"
 
 #define CHUNK_SIZE 1024
 
@@ -18,7 +19,7 @@ void receive_image(int sockfd) {
     socklen_t clilen;
 
     // Acepta conexiones entrantes
-    while (1) {
+   
         sem_wait(&sem); // Decrementa el semáforo
 
         clilen = sizeof(cli_addr);
@@ -45,6 +46,7 @@ void receive_image(int sockfd) {
             }
         }
 
+
         // Espera a que todos los datos sean enviados
         if (shutdown(newsockfd, SHUT_WR) < 0) {
             printf("Error al cerrar el socket\n");
@@ -56,12 +58,12 @@ void receive_image(int sockfd) {
 
         // Cierra el archivo
         fclose(fp);
-
+        sobel("imagenrecibida0.jpg");
         // Cierra el socket para esta conexión
         close(newsockfd);
 
         sem_post(&sem); // Incrementa el semáforo
-    }
+    
 }
 
 int main() {
@@ -94,6 +96,7 @@ int main() {
 
         listen(sockfd, 5);
         receive_image(sockfd);
+        printf("Escuchando");
     }
 
     // Destruye el semáforo
