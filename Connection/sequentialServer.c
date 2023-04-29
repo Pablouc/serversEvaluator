@@ -37,7 +37,7 @@ int addRequests(void* arg){
         if(cant_requests < counter){
             cant_requests= cant_requests +1;
             char imgAddr[50];
-            sprintf(imgAddr, "imagenrecibida%d.jpg", counter--);
+            sprintf(imgAddr, "imagenrecibida%d.jpg", cant_requests-1);
 
             sleep(1);
             //verify if the file exists
