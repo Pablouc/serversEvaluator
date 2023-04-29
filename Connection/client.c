@@ -6,8 +6,30 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <pthread.h>
 
 #define CHUNK_SIZE 1024
+
+struct thread_info {
+    int sockfd;
+    struct sockaddr_in serv_addr;
+    char *image_name;
+    int n_ciclos;
+};
+
+void *send_images_thread(void *arg) {
+    struct thread_info *info = (struct thread_info*) arg;
+    int sockfd = info->sockfd;
+    struct sockaddr_in serv_addr = info->serv_addr;
+    char *image_name = info->image_name;
+    int n_ciclos = info->n_ciclos;
+
+    for (int i = 0; i < n_ciclos; i++) {
+        send_image(sockfd, serv_addr, image_name);
+    }
+
+    return NULL;
+}
 
 void send_image(int sockfd, struct sockaddr_in serv_addr, char *image_name) {
 
@@ -26,12 +48,10 @@ void send_image(int sockfd, struct sockaddr_in serv_addr, char *image_name) {
         // Conecta con el servidor
         if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
             printf("Error al conectarse con el servidor\n");
-            
         }
         else{break;}
     }
     
-
     // Lee el archivo de imagen y envía los chunks al servidor
     while ((n = fread(buffer, 1, CHUNK_SIZE, fp)) > 0) {
         if (send(sockfd, buffer, n, 0) < 0) {
@@ -44,16 +64,7 @@ void send_image(int sockfd, struct sockaddr_in serv_addr, char *image_name) {
     fclose(fp);
 }
 
-
-void send_images(int sockfd, struct sockaddr_in serv_addr, char *image_name, int n_ciclos) {
-    for (int i = 0; i < n_ciclos; i++) {
-        send_image(sockfd, serv_addr, image_name);
-    }
-}
-
 int main(int argc, char *argv[]) {
-    int sockfd;
-    struct sockaddr_in serv_addr;
     int opt;
     char *ip, *port, *image;
     int n_threads, n_ciclos;
@@ -89,19 +100,24 @@ int main(int argc, char *argv[]) {
     }
 
     // Crea un socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-        printf("Error al crear el socket\n");
-        return 1;
-    }
+    int sockfd = create_socket(ip, port);
 
     // Configura la dirección del servidor
+    struct sockaddr_in serv_addr;
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(atoi(port));
     inet_pton(AF_INET, ip, &serv_addr.sin_addr);
 
-    // Envía la imagen al servidor n_ciclos veces
-    send_images(sockfd, serv_addr, image, n_ciclos);
+    // Crea una estructura con la información necesaria para los hilos
+    struct thread_info info = {
+        .sockfd = sockfd,
+        .serv_addr = serv_addr,
+        .image_name = image,
+        .n_ciclos = n_ciclos
+    };
+
+    // Crea los hilos y espera a que terminen
+    send_images_multithreaded(n_threads, &info);
 
     // Cierra el socket
     close(sockfd);
