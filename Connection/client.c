@@ -49,6 +49,11 @@ void send_images(int sockfd, struct sockaddr_in serv_addr, char *image_name, int
     for (int i = 0; i < n_ciclos; i++) {
         send_image(sockfd, serv_addr, image_name);
     }
+    char *stop="$";
+    if(send(sockfd,stop,sizeof(stop),0) < 0) {
+            printf("Error al enviar los datos al servidor\n");
+            exit(1);
+        }
 }
 
 int main(int argc, char *argv[]) {

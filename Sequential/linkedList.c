@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 struct node {
-    int data;
+    char* image;
     struct node* next;
 };
 
@@ -21,25 +21,11 @@ void initList(struct linkedList* list) {
 
 
 // function to insert a new node at the end of the list
-void insertAtEnd(struct linkedList* list, int data) {
-    struct node* newNode = (struct node*) malloc(sizeof(struct node));
-    newNode->data = data;
-    newNode->next = NULL;
-    if (list->head == NULL) {
-        list->head = newNode;
-    } else {
-        struct node* current = list->head;
-        while (current->next != NULL) {
-            current = current->next;
-        }
-        current->next = newNode;
-    }
-}
 
 // function to insert a new node at the beginning of the list
-void insertAtBeginning(struct linkedList* list, int data) {
+void insertAtBeginning(struct linkedList* list, char* image) {
     struct node* newNode = (struct node*) malloc(sizeof(struct node));
-    newNode->data = data;
+    newNode->image = image;
     newNode->next = list->head;
     list->head = newNode;
 }
@@ -58,10 +44,11 @@ void removeFromBeginning(struct linkedList* list) {
 void printList(struct linkedList* list) {
     struct node* current = list->head;
     while (current != NULL) {
-        printf("%d ", current->data);
+        printf("%s ", current->image);
         current = current->next;
     }
     printf("\n");
 }
+
 
 

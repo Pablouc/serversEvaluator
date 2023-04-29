@@ -53,7 +53,7 @@ void sobel(uint8_t* inputImg) {
   uint8_t* img = stbi_load(inputImg, &w, &h, &c, 1);
   if (!img) {
     printf("Error loading image %s\n", inputImg);
-    return 1;
+    return;
   }
 
   sobel_filter(img, w, h);

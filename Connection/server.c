@@ -5,22 +5,23 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <semaphore.h>
-#include "./sobel.c"
+
 
 #define CHUNK_SIZE 1024
 
 sem_t sem;
+int counter = 0;
 
-void receive_image(int sockfd) {
+char receive_image(int sockfd) {
     FILE *fp;
     char buffer[CHUNK_SIZE];
-    int newsockfd, n, counter = 0;
+    int newsockfd, n;
     struct sockaddr_in cli_addr;
     socklen_t clilen;
 
     // Acepta conexiones entrantes
    
-        sem_wait(&sem); // Decrementa el semáforo
+        sem_wait(&sem); //Decrementa el semáforo
 
         clilen = sizeof(cli_addr);
         newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
@@ -28,10 +29,10 @@ void receive_image(int sockfd) {
             printf("Error al aceptar la conexión entrante\n");
             exit(1);
         }
-
+//32-61
         // Crea un archivo para guardar la imagen recibida
         char image_name[50];
-        sprintf(image_name, "imagenrecibida%d.jpg", counter++);
+        sprintf(image_name, "../Sequential/Images/imgreceived%d.jpg", ++counter);
         fp = fopen(image_name, "wb");
         if (fp == NULL) {
             printf("Error al crear el archivo de imagen\n");
@@ -44,6 +45,9 @@ void receive_image(int sockfd) {
                 printf("Error al escribir los datos en el archivo de imagen\n");
                 exit(1);
             }
+            if((unsigned char)buffer[0]=='$'){
+                printf("Message completed");break;
+            }
         }
 
 
@@ -54,19 +58,21 @@ void receive_image(int sockfd) {
         }
 
         // Recibe cualquier dato adicional del socket
-        while (recv(newsockfd, buffer, CHUNK_SIZE, 0) > 0);
-
+        //while (recv(newsockfd, buffer, CHUNK_SIZE, 0) > 0);
         // Cierra el archivo
         fclose(fp);
-        sobel("imagenrecibida0.jpg");
-        // Cierra el socket para esta conexión
-        close(newsockfd);
 
+        // Cierra el socket para esta conexión
+        //close(newsockfd);
+
+
+        //sem_post
         sem_post(&sem); // Incrementa el semáforo
-    
+ 
+
 }
 
-int main() {
+int runSocket() {
     int sockfd;
     struct sockaddr_in serv_addr;
 
@@ -91,10 +97,12 @@ int main() {
         return 1;
     }
 
+    
     // Acepta conexiones entrantes
+
+    listen(sockfd, SOMAXCONN);
     while(1){
 
-        listen(sockfd, 5);
         receive_image(sockfd);
         printf("Escuchando");
     }

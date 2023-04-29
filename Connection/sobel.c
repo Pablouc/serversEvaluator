@@ -8,6 +8,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "./stb_image_write.h"
 
+
 void sobel_filter(uint8_t* img, int w, int h) {
   int kernel_x[3][3] = {
     {-1, 0, 1},
@@ -46,14 +47,14 @@ void sobel_filter(uint8_t* img, int w, int h) {
   free(out);
 }
 
-void sobel(uint8_t* inputImg) {
+int sobel(uint8_t* inputImg) {
   
 
   int w, h, c;
   uint8_t* img = stbi_load(inputImg, &w, &h, &c, 1);
   if (!img) {
     printf("Error loading image %s\n", inputImg);
-    return 1;
+    return 0;
   }
 
   sobel_filter(img, w, h);
@@ -61,6 +62,7 @@ void sobel(uint8_t* inputImg) {
   stbi_write_png(inputImg, w, h, 1, img, w);
 
   stbi_image_free(img);
+  return 1;
 
 }
 
