@@ -32,6 +32,9 @@ void receive_image(int sockfd)
         exit(1);
     }
     // Crea un archivo para guardar la imagen recibida
+    if(counter==100){
+        return;
+    }
     char image_name[50];
     sprintf(image_name, "imagenrecibida%d.jpg", counter++);
     fp = fopen(image_name, "wb");
@@ -68,8 +71,11 @@ void receive_image(int sockfd)
 
     // Cierra el archivo
     fclose(fp);
-    //uint8_t* inputImg = sprintf(buffer, "imagenrecibida%d.jpg", counter);
-    sobel("imagenrecibida0.jpg");
+    uint8_t imgFile[50];
+
+    // Concatenate the number and string into a buffer
+    sprintf((char*)imgFile, "imagenrecibida%d.jpg", counter-1);
+    sobel(imgFile);
 
     printf("Image processed\n");
     sem_post(&sem); // Incrementa el semáforo

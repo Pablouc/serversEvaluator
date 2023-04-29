@@ -88,7 +88,7 @@ void send_image(int sockfd, struct sockaddr_in serv_addr, char *image_name, char
     while ((n = fread(buffer, 1, CHUNK_SIZE, fp)) > 0)
     {
         if (send(sockfd, buffer, n, 0) < 0)
-        {
+        { 
             printf("Error al enviar los datos al servidor\n");
             exit(1);
         }
@@ -133,7 +133,7 @@ void create_threads(int sockfd, struct sockaddr_in serv_addr, char *ip, char *po
 
         // Crea el hilo
         pthread_create(&threads[i], NULL, send_images, info);
-        printf("Thread creado");
+        printf("Thread creado\n");
     }
 
     // Espera a que los hilos terminen
@@ -142,11 +142,6 @@ void create_threads(int sockfd, struct sockaddr_in serv_addr, char *ip, char *po
         pthread_join(threads[j], NULL);
     }
 
-    // // Comprueba que se hayan enviado correctamente todas las imágenes
-    // if (total_ciclos != n_ciclos) {
-    //     printf("No se han enviado correctamente todas las imágenes\n");
-    //     exit(1);
-    // }
 }
 
 int main(int argc, char *argv[])
