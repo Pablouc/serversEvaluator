@@ -10,18 +10,18 @@
 #define CHUNK_SIZE 1024
 
 void send_image(int sockfd, struct sockaddr_in serv_addr, char *image_name) {
+
     FILE *fp;
     char buffer[CHUNK_SIZE];
     int n;
-    // printf("La imagen tiene el nombre: \n");
-    // printf(image_name);
-    // printf("\n");
+    
     // Abre el archivo de imagen
     fp = fopen(image_name, "rb");
     if (fp == NULL) {
         printf("Error al abrir el archivo de imagen\n");
         exit(1);
     }
+    //While hasta que se conecte al server
     while(1){
         // Conecta con el servidor
         if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
@@ -44,14 +44,6 @@ void send_image(int sockfd, struct sockaddr_in serv_addr, char *image_name) {
     fclose(fp);
 }
 
-// void send_images(int sockfd, struct sockaddr_in serv_addr, char *image_name, int n_ciclos) {
-//     char image_name_with_counter[100];
-
-//     for (int i = 0; i < n_ciclos; i++) {
-//         sprintf(image_name_with_counter, "%s%d", image_name, i);
-//         send_image(sockfd, serv_addr, image_name_with_counter);
-//     }
-// }
 
 void send_images(int sockfd, struct sockaddr_in serv_addr, char *image_name, int n_ciclos) {
     for (int i = 0; i < n_ciclos; i++) {

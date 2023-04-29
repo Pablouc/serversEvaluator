@@ -1,119 +1,110 @@
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
-#define PORT 8080
-  
-int main(int argc, char const* argv[])
-{
+#include <getopt.h>
 
-    // image serializer
+#define CHUNK_SIZE 1024
+
+void send_image(int sockfd, struct sockaddr_in serv_addr, char *image_name) {
+
     FILE *fp;
-    char *buffer;
-    long file_size;
-    size_t result;
-
-    fp = fopen("josu.jpg", "rb");  
+    char buffer[CHUNK_SIZE];
+    int n;
+    
+    // Abre el archivo de imagen
+    fp = fopen(image_name, "rb");
     if (fp == NULL) {
-        printf("Error: Unable to open file.\n");
+        printf("Error al abrir el archivo de imagen\n");
         exit(1);
     }
-
-    fseek(fp, 0, SEEK_END);  // Determine the size of the image file
-    file_size = ftell(fp);
-    rewind(fp);
-
-    buffer = (char *)malloc(sizeof(char) * file_size);  // Allocate memory for the image data
-    if (buffer == NULL) {
-        printf("Error: Unable to allocate memory.\n");
-        exit(1);
+    //While hasta que se conecte al server
+    while(1){
+        // Conecta con el servidor
+        if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+            printf("Error al conectarse con el servidor\n");
+            
+        }
+        else{break;}
     }
-
-    result = fread(buffer, 1, file_size, fp);  // Read the image data from the file into the allocated memory
-    if (result != file_size) {
-        printf("Error: Unable to read file.\n");
-        exit(1);
-    }
-
-    fclose(fp);  // Close the file
-
-    char image_serialized[file_size];  // Convert the image data to a char array
-    for (int i = 0; i < file_size; i++) {
-        image_serialized[i] = buffer[i];
-    }
-
-    free(buffer);  // Free the memory used for the image data
-
-    //
     
-    //client initiator
 
-    int status, valread, client_fd;
+    // Lee el archivo de imagen y envía los chunks al servidor
+    while ((n = fread(buffer, 1, CHUNK_SIZE, fp)) > 0) {
+        if (send(sockfd, buffer, n, 0) < 0) {
+            printf("Error al enviar los datos al servidor\n");
+            exit(1);
+        }
+    }
+
+    // Cierra el archivo
+    fclose(fp);
+}
+
+
+void send_images(int sockfd, struct sockaddr_in serv_addr, char *image_name, int n_ciclos) {
+    for (int i = 0; i < n_ciclos; i++) {
+        send_image(sockfd, serv_addr, image_name);
+    }
+}
+
+int main(int argc, char *argv[]) {
+    int sockfd;
     struct sockaddr_in serv_addr;
+    int opt;
+    char *ip, *port, *image;
+    int n_threads, n_ciclos;
 
-    // for (int i = 0; i < file_size; i++) {
-    //      printf("Index %d: %02X\n", i, (unsigned char)image_serialized[i]);
-    // }
-    
-    char buffer2[1024] = { 0 };
-    if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf("\n Socket creation error \n");
-        return -1;
+    // Procesa los argumentos de la línea de comandos
+    while ((opt = getopt(argc, argv, "a:p:i:t:c:")) != -1) {
+        switch (opt) {
+            case 'a':
+                ip = optarg;
+                break;
+            case 'p':
+                port = optarg;
+                break;
+            case 'i':
+                image = optarg;
+                break;
+            case 't':
+                n_threads = atoi(optarg);
+                break;
+            case 'c':
+                n_ciclos = atoi(optarg);
+                break;
+            default:
+                printf("Uso: %s -a <ip> -p <puerto> -i <imagen> -t <n_threads> -c <n_ciclos>\n", argv[0]);
+                exit(1);
+        }
     }
-  
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-  
-    // Convert IPv4 and IPv6 addresses from text to binary
-    // form
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)
-        <= 0) {
-        printf(
-            "\nInvalid address/ Address not supported \n");
-        return -1;
-    }
-  
-    if ((status
-         = connect(client_fd, (struct sockaddr*)&serv_addr,
-                   sizeof(serv_addr)))
-        < 0) {
-        printf("\nConnection Failed \n");
-        return -1;
-    }
-    // Open a file for writing
-    FILE *file = fopen("output2.txt", "w");
 
-    // Check if the file was opened successfully
-    if (file == NULL) {
-        printf("Error opening file!\n");
+    // Comprueba que se hayan proporcionado los argumentos necesarios
+    if (ip == NULL || port == NULL || image == NULL || n_threads <= 0 || n_ciclos <= 0) {
+        printf("Uso: %s -a <ip> -p <puerto> -i <imagen> -t <n_threads> -c <n_ciclos>\n", argv[0]);
+        exit(1);
+    }
+
+    // Crea un socket
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        printf("Error al crear el socket\n");
         return 1;
     }
 
-    // Write the buffer to the file
-    fwrite(image_serialized, sizeof(char), sizeof(image_serialized), file);
+    // Configura la dirección del servidor
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(atoi(port));
+    inet_pton(AF_INET, ip, &serv_addr.sin_addr);
 
-    // Close the file
-    fclose(file);
+    // Envía la imagen al servidor n_ciclos veces
+    send_images(sockfd, serv_addr, image, n_ciclos);
 
-    int flag = file_size/1024;
-    send(client_fd, flag, 1, 0);
-    int counter = 0;
-    while(counter!=flag){
-        char dest_array[1024];
-        for (int i = 0; i < 1024; i++) {
-            dest_array[i] = image_serialized[counter*1024 + i];
-        }
-        send(client_fd, dest_array, 1024, 0);
-        printf("Hello message sent\n");
-        valread = read(client_fd, buffer2, 1024);
-        printf("%s\n", buffer2);
-        counter++;
-    }
-    char* stop="$";
-    send(client_fd, stop, sizeof(stop), 0);
-    // closing the connected socket
-    close(client_fd);
+    // Cierra el socket
+    close(sockfd);
+
     return 0;
 }
