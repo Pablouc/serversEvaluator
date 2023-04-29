@@ -5,7 +5,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <semaphore.h>
-#include "./sobel.c"
 
 #define CHUNK_SIZE 1024
 
@@ -71,18 +70,18 @@ void receive_image(int sockfd)
 
     // Cierra el archivo
     fclose(fp);
-    uint8_t imgFile[50];
+    // uint8_t imgFile[50];
 
-    // Concatenate the number and string into a buffer
-    sprintf((char*)imgFile, "imagenrecibida%d.jpg", counter-1);
-    sobel(imgFile);
+    // // Concatenate the number and string into a buffer
+    // sprintf((char*)imgFile, "imagenrecibida%d.jpg", counter-1);
+    // sobel(imgFile);
 
-    printf("Image processed\n");
+    // printf("Image processed\n");
     sem_post(&sem); // Incrementa el semáforo
     return;
 }
 
-int main()
+void runSocket()
 {
     int sockfd;
     struct sockaddr_in serv_addr;
@@ -96,7 +95,7 @@ int main()
     if (sockfd < 0)
     {
         printf("Error al crear el socket\n");
-        return 1;
+        return;
     }
 
     // Configura la dirección del servidor
@@ -108,7 +107,7 @@ int main()
     if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         printf("Error al asociar el socket con la dirección del servidor\n");
-        return 1;
+        return;
     }
 
     listen(sockfd, SOMAXCONN);
@@ -124,5 +123,5 @@ int main()
     // Cierra el socket principal
     close(sockfd);
 
-    return 0;
+    return;
 }
