@@ -16,12 +16,10 @@ struct threadParams{
     struct linkedList* memList;
     sem_t* sem;
     int port;
+    char* img;
 };
 
 int cant_requests = 0;
-
-
-
 
 //struct linkedList* list
 int addRequests(void* arg){
@@ -66,6 +64,12 @@ int addRequests(void* arg){
 
     
 }
+
+void processImage(void* args){
+    struct threadParams* arg = (struct threadParams*) args;
+    sobel("imagenrecibida0.jpg");
+}
+
 //struct linkedList* list
 void processRequests(void* arg){
     struct threadParams* args = (struct threadParams*) arg;
@@ -92,8 +96,6 @@ void processRequests(void* arg){
         }
         while(current != NULL){
 
-           
-            printf("hola");
             //To measure execution time
             struct timespec start_time, end_time;
             clock_gettime(CLOCK_MONOTONIC_RAW, &start_time);
@@ -104,7 +106,12 @@ void processRequests(void* arg){
 
             //Execution
             char* firstElem = current->image;
-            sobel(firstElem);
+            // sprintf(args->img, "%s", firstElem);
+
+            pthread_t Img;
+            pthread_create(&Img, NULL, (void* (*)(void*)) &processImage, &args);
+            printf("Thread creado\n");
+            pthread_join(Img, NULL);
             removeFromBeginning(list);
             current = list->head;
             printList(list);
@@ -140,9 +147,11 @@ void processRequests(void* arg){
     //printList(memUsage);
 
     
+    
 }
 
-//sobel("imagenrecibida0.jpg");
+
+
 
 int main(){
     struct linkedList myList;
@@ -162,7 +171,8 @@ int main(){
 
     struct threadParams args={&myList,&exec_time, &mem_usage, &sem, &port};
 
-    pthread_create(&threadA, NULL, (void* (*)(void*)) &runSocket, NULL);
+
+     pthread_create(&threadA, NULL, (void* (*)(void*)) &runSocket, NULL);
     pthread_create(&threadB, NULL, (void* (*)(void*)) &addRequests, &args);
     pthread_create(&threadC, NULL, (void* (*)(void*)) &processRequests, &args);
 
