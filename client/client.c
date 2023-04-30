@@ -23,7 +23,7 @@ struct thread_info
 
 sem_t socket_sem;
 
-int create_socket(char *ip, char *port)
+int create_socket(char *ip, char *port, struct sockaddr_in *serv_addr)
 {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
@@ -32,16 +32,9 @@ int create_socket(char *ip, char *port)
         exit(1);
     }
 
-    struct sockaddr_in serv_addr;
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(atoi(port));
-    inet_pton(AF_INET, ip, &serv_addr.sin_addr);
-
-    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-        printf("Error al conectarse con el servidor\n");
-        exit(1);
-    }
+    serv_addr->sin_family = AF_INET;
+    serv_addr->sin_port = htons(atoi(port));
+    inet_pton(AF_INET, ip, &serv_addr->sin_addr);
 
     return sockfd;
 }
@@ -59,39 +52,12 @@ void send_image(int sockfd, struct sockaddr_in serv_addr, char *image_name, char
     char buffer[CHUNK_SIZE];
     int n;
 
-    // Crea un socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
-    {
-        printf("Error al crear el socket\n");
-        return;
-    }
-
-    // Configura la dirección del servidor
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(atoi(port));
-    inet_pton(AF_INET, ip, &serv_addr.sin_addr);
-
     // Abre el archivo de imagen
     fp = fopen(image_name, "rb");
     if (fp == NULL)
     {
         printf("Error al abrir el archivo de imagen\n");
         exit(1);
-    }
-    // While hasta que se conecte al server
-    while (1)
-    {
-        int timeout_seconds = 1;
-        // Attempt to connect to server
-        if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == 0)
-        {
-            break;
-        }
-
-        // If connection failed, wait before retrying
-        printf("Connection attempt failed, retrying in %d seconds...\n", timeout_seconds);
-        sleep(timeout_seconds);
     }
 
     // Lee el archivo de imagen y envía los chunks al servidor
@@ -104,7 +70,7 @@ void send_image(int sockfd, struct sockaddr_in serv_addr, char *image_name, char
         }
     }
     char *stop = "$";
-    if (send(sockfd, stop, sizeof(stop), 0) < 0)
+    if (send_to_socket(sockfd, stop, sizeof(stop)) < 0)
     {
         printf("Error al enviar los datos al servidor\n");
         exit(1);
@@ -119,6 +85,7 @@ void *send_images(void *arg)
     struct thread_info *info = (struct thread_info *)arg;
     for (int i = 0; i < info->n_ciclos; i++)
     {
+        printf("Enviando imagen!\n");
         send_image(info->sockfd, info->serv_addr, info->image_name, info->port, info->ip);
     }
     return NULL;
@@ -131,7 +98,6 @@ void create_threads(int sockfd, struct sockaddr_in serv_addr, char *ip, char *po
     pthread_t threads[n_threads];
     for (int i = 0; i < n_threads; i++)
     {
-
         // Crea una estructura con la información necesaria para el hilo
         struct thread_info *info = malloc(sizeof(struct thread_info));
         info->sockfd = sockfd;
@@ -158,9 +124,35 @@ void initialize_socket_semaphore() {
     sem_init(&socket_sem, 0, 1);
 }
 
+void connect_socket(int sockfd, struct sockaddr_in serv_addr) {
+    // While hasta que se conecte al server
+    int timeout_seconds;
+    int server_is_not_connected = 1;
+    while (server_is_not_connected)
+    {
+        timeout_seconds = 1;
+        // Attempt to connect to server
+        if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == 0)
+        {
+          server_is_not_connected = 0;
+        } else {
+          // If connection failed, wait before retrying
+          printf("Connection attempt failed, retrying in %d seconds...\n", timeout_seconds);
+          sleep(timeout_seconds);
+        }
+
+    }
+}
+
+int initialize_socket(char *ip, char *port) {
+    struct sockaddr_in serv_addr;
+    int sockfd = create_socket(ip, port, &serv_addr);
+    connect_socket(sockfd, serv_addr);
+    return sockfd;
+}
+
 int main(int argc, char *argv[])
 {
-
     int sockfd;
     struct sockaddr_in serv_addr;
     int opt;
@@ -194,12 +186,14 @@ int main(int argc, char *argv[])
     }
 
     // Comprueba que se hayan proporcionado los argumentos necesarios
-    if (ip == NULL || port == NULL || image == NULL || n_threads <= 0 || n_ciclos <= 0)
+    if (ip == NULL || port == NULL || image == NULL || n_threads <= 0 ||
+        n_ciclos <= 0)
     {
         printf("Uso: %s -a <ip> -p <puerto> -i <imagen> -t <n_threads> -c <n_ciclos>\n", argv[0]);
         exit(1);
     }
 
+    sockfd = initialize_socket(ip, port);
     initialize_socket_semaphore();
     create_threads(sockfd, serv_addr, ip, port, image, n_threads, n_ciclos);
 
