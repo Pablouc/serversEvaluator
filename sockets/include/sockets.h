@@ -1,10 +1,24 @@
 #ifndef SOCKETS_H
 #define SOCKETS_H
+#include "linkedList.h"
 #include <arpa/inet.h>
 #include <semaphore.h>
 
+#define CHUNK_SIZE 1024
+
+struct threadParams {
+  struct linkedList *list;
+  struct linkedList *execList;
+  struct linkedList *memList;
+  sem_t *sem;
+  int alive;
+};
+
+int counter = 0;
 sem_t *socket_sem;
 
+void runSocket(void *args);
+void receive_image(int sockfd, struct linkedList *list);
 int create_socket(char *ip, char *port, struct sockaddr_in *serv_addr);
 int send_to_socket(int sockfd, char *buffer, int n);
 int receive_from_socket(int sockfd, char *buffer, int n);

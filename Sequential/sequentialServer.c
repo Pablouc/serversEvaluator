@@ -6,10 +6,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "./server.c"
 #include "./sobel.c"
 #include "linkedList.h"
-#include "sequentialServer.h"
+#include "sockets.h"
 
 int cant_requests = 0;
 

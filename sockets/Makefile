@@ -1,12 +1,14 @@
 CC = gcc
-COMPILER_FLAGS = -Wall -Werror
+INCLUDES = -I../common/include
+COMPILER_FLAGS = -Wall -Werror $(INCLUDES)
+SOURCES = sockets.c ../common/linkedList.c
 
 default: all
 
 all: sockets
 
 sockets: sockets.c
-	$(CC) $(COMPILER_FLAGS) -c sockets.c $(LINKER_FLAGS)
+	$(CC) $(COMPILER_FLAGS) -c $(SOURCES) $(LINKER_FLAGS)
 	$(AR) rcs libsockets.a sockets.o
 
 clean:
