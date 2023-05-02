@@ -1,7 +1,7 @@
 #ifndef STATISTICS_H
 #define STATISTICS_H
 
-struct sequentialServerData {
+struct serverData {
   int cant_solicitudes;
   int tiempo_ejecucion_total;
   int consumo_memoria_total;
@@ -9,6 +9,6 @@ struct sequentialServerData {
 
 long int getCurrentRSS(void);
 
-void writeCSV(struct sequentialServerData server);
+void writeCSV(struct serverData server);
 
 #endif

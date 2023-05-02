@@ -14,7 +14,7 @@ long int getCurrentRSS(void) {
 }
 
 // Función para escribir los datos en un archivo CSV
-void writeCSV(struct sequentialServerData server) {
+void writeCSV(struct serverData server) {
   FILE *fp;
   // fp = fopen("datos.csv", "w");
   fp = fopen("../stadistics/datos.csv", "a");
@@ -30,4 +30,3 @@ void writeCSV(struct sequentialServerData server) {
     printf("Archivo datos.csv escrito correctamente\n");
   }
 }
-
