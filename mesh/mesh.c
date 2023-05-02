@@ -10,9 +10,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "./common/structures.c"
 #include "include/shmem_handler.h"
 
 #define TEST_FILE_LENGTH 20
+
+
 
 typedef struct thread_list_node {
   pthread_t *thread_id;
@@ -40,7 +43,7 @@ void *initialize_shared_memory(size_t size) {
 }
 
 void unmap_shared_memory(void *shm_ptr) {
-  size_t size = sizeof(struct shm_context);
+  size_t size = sizeof(struct shm_context)+ sizeof(struct process)*get_shm_context(shm_ptr)->child_num;
   shm_unmap(shm_ptr, size);
 }
 
@@ -50,64 +53,131 @@ int get_heartbeat(void *shm_ptr) {
 }
 
 void *mesh_get_shm_ptr() {
-  int initial_shm_size = sizeof(struct shm_context);
+   void *shm_ptr = initialize_shared_memory(1);
+   struct shm_context *context = get_shm_context(shm_ptr);
+  int initial_shm_size = sizeof(struct shm_context) + sizeof(struct process) * context->child_num;;
   void *shm_ptr = initialize_shared_memory(initial_shm_size);
   return shm_ptr;
 }
 
-void create_thread(void *(*thread_function)(void *), void *shm_ptr) {
-  pthread_t *thread = malloc(sizeof(pthread_t));
-  pthread_create(thread, NULL, thread_function, shm_ptr);
-  add_thread_to_list(thread);
-}
 
 int close_shared_memory(int shm_id) {
   return shmem_close_shared_memory(shm_id);
 }
 
-void initialize_context(void *shm_ptr, int buffer_size, int input_file_size,
-                        int shm_id) {
-  struct shm_context context = {
-      .size_of_buffer = buffer_size,
-      .heartbeat = 0,
-      .shm_id = shm_id,
-  };
-  memcpy(shm_ptr, &context, sizeof(struct shm_context));
+struct process *get_process_list_info(void *shm_ptr)
+{
+    struct process *process_list_info =
+        shm_ptr + sizeof(struct shm_context);
+    return process_list_info;
 }
+
+void *mesh_register_pre_heavy_process()
+{
+    void *shm_ptr = mesh_get_shm_ptr();
+    struct shm_context *context = get_shm_context(shm_ptr);
+    if (context->heartbeat == 0)
+    {
+        printf("Error! Heartbeat is 0, mesh was not initialized!\n");
+        int *errcode = malloc(sizeof(int));
+        *errcode = -1;
+        shm_ptr = errcode;
+        return shm_ptr;
+    }
+
+    return shm_ptr;
+}
+
+void initialize_context(void *shm_ptr, int shm_id, int child_num)
+{
+    struct shm_context context = {
+        .heartbeat = 0,
+        .shm_id = shm_id,
+        .child_num = child_num,
+    };
+    memcpy(shm_ptr, &context, sizeof(struct shm_context));
+}
+
+void initialize_processes(void *shm_ptr){
+    struct shm_context *context= get_shm_context(shm_ptr);
+    int child_number = context->child_num;
+
+    struct process processes_array[child_number];
+
+    for(int i=0; i<child_number;i++){
+        sem_init(&(processes_array[i].go), 1, 0);
+    }
+
+    
+    
+    memcpy(
+        shm_ptr + sizeof(struct shm_context),
+        &processes_array,
+        sizeof(processes_array));
+}
+
+
 
 void initialize_heartbeat(void *shm_ptr) {
   struct shm_context *context = get_shm_context(shm_ptr);
   context->heartbeat = 1;
 }
 
-void *mesh_initialize(int buffer_size, int file_length) {
-  printf("Starting mesh initialization\n");
-  int shm_size = sizeof(struct shm_context);
-  void *shm_ptr = initialize_shared_memory(shm_size);
-  int shm_id = get_shm_context(shm_ptr)->shm_id;
-  int input_file_size = file_length;
+void *mesh_initialize(int child_num)
+{
+    printf("Starting mesh initialization\n");
+    int shm_size =
+        sizeof(struct shm_context) + sizeof(struct process)*child_num;
+    void *shm_ptr = initialize_shared_memory(shm_size);
+    int shm_id = get_shm_context(shm_ptr)->shm_id;
+    // int input_file_size = file_length;
 
-  initialize_context(shm_ptr, buffer_size, input_file_size, shm_id);
-  printf("Context initialized\n");
+    initialize_context(shm_ptr, shm_id, child_num);
+    printf("Context initialized\n");
 
-  initialize_heartbeat(shm_ptr);
-  printf("Heartbeat initialized\n");
+    initialize_heartbeat(shm_ptr);
+    printf("Heartbeat initialized\n");
 
-  printf("Mesh initialized correctly!\n");
+    initialize_processes(shm_ptr);
+    printf("Processes initialized\n");
 
-  return shm_ptr;
+    printf("Mesh initialized correctly!\n");
+
+    return shm_ptr;
 }
 
-struct shm_caracter *get_buffer(void *shm_ptr) {
-  struct shm_caracter *buffer =
-      (struct shm_caracter *)(shm_ptr + sizeof(struct shm_context));
-  return buffer;
+int set_children_id(void *shm_ptr, int processID, int index ){
+    struct shm_context *context= get_shm_context(shm_ptr);
+    int child_number = context->child_num;
+
+    struct process* process_array=  (struct process*)(shm_ptr + sizeof(struct shm_context));
+
+    for(int i=0; i<child_number;i++){
+      if(index == i){
+        (process_array[i].go);
+        return 1;
+      }
+    }
+    printf("Index not found");
+    return 0;
 }
 
-struct mesh_semaphores *mesh_get_all_semaphores(void *shm_ptr) {
-  struct mesh_semaphores *semaphores =
-      (struct mesh_semaphores *)(shm_ptr + sizeof(struct shm_context));
-  return semaphores;
+
+sem_t *mesh_get_sobel_semaphore(void *shm_ptr, int processID)
+{   
+    struct shm_context *context= get_shm_context(shm_ptr);
+    int child_number = context->child_num;
+
+    struct process* process_array=  (struct process*)(shm_ptr + sizeof(struct shm_context));
+
+    for(int i=0; i<child_number;i++){
+      if(process_array[i].id == processID){
+        return &(process_array[i].go);
+      }
+     
+    }
+    printf("Semaphore not found");
+    return NULL;
 }
 
 void mesh_finalize(void *shm_ptr) {
