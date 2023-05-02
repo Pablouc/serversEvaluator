@@ -53,7 +53,7 @@ int addRequests(void* arg){
             // Release the semaphore
             printList(list);
             sem_post(sem);
-            sleep(2);
+            sleep(1);
         }
 
         
@@ -92,7 +92,6 @@ void processRequests(void* arg){
         while(current != NULL){
 
            
-            printf("hola");
             //To measure execution time
             struct timespec start_time, end_time;
             clock_gettime(CLOCK_MONOTONIC_RAW, &start_time);
