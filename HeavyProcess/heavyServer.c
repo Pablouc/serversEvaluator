@@ -14,18 +14,14 @@
 int cant_requests = 0;
 sem_t semName;
 
-struct imageInfo {
-  int imageNum;
-  char *imageName;
-};
-
-void processImage(int imageNum, char *imageName){
+void processImage(int image_num, char *imageName){
     char *image_name;
     printf("%s this is the image\n",(char*)imageName);
     image_name = malloc(sizeof(char) * 50);
     strcpy(image_name, imageName);
+    printf("This is the number %d\n", image_num);
     sem_post(&semName);
-    sobel(image_name,imageNum < 100);
+    sobel(image_name,image_num < 100);
     return;
 }
 
@@ -39,16 +35,16 @@ void processRequests(void *arg) {
   while (args->alive || list->size > 0) {
     if (list->head != NULL) {
       // printList(list);
+
       struct node current = pop(list);
-      
+      int image_num = current.image_num;
       pid_t pid;
       pid = fork();
       if(pid == 0){ 
+        sem_wait(&semName);
         image_name = malloc(sizeof(char) * 50);
         strcpy(image_name, current.image);
-        printf("current: %s\n", image_name);
-        sem_wait(&semName);
-        processImage(current.image_num,image_name);
+        processImage(image_num,image_name);
         free(image_name);
         exit(0);
       }

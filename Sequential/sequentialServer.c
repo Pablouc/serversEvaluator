@@ -26,7 +26,7 @@ void processRequests(void *arg) {
       image_name = malloc(sizeof(char) * 50);
 
       strcpy(image_name, current.image);
-      printf("current: %s\n", image_name);
+      printf("current: %d\n", current.image_num);
       sobel(image_name, current.image_num < 100);
 
       free(image_name);

@@ -15,7 +15,7 @@ int cant_requests = 0;
 sem_t semName;
 
 struct imageInfo {
-  int imageNum;
+  struct node current;
   char *imageName;
 };
 
@@ -24,9 +24,10 @@ void processImage(void* arg){
     char *image_name;
     printf("%s this is the image\n",(char*)args->imageName);
     image_name = malloc(sizeof(char) * 50);
+    printf("This is the number %d\n",args->current.image_num);
     strcpy(image_name, args->imageName);
     sem_post(&semName);
-    sobel(image_name,args->imageNum < 100);
+    sobel(image_name,args->current.image_num< 100);
     return;
 }
 
@@ -48,7 +49,7 @@ void processRequests(void *arg) {
       pthread_t Img;
       sem_wait(&semName);
 
-      struct imageInfo args = {current.image_num,image_name};
+      struct imageInfo args = {current,image_name};
       pthread_create(&Img, NULL, (void* (*)(void*)) &processImage, &args); 
 
       printf("Thread creado\n");
