@@ -11,10 +11,13 @@ all: client
 sockets:
 	make -C ../sockets/
 
-client: client.c sockets
+common:
+	make -C ../common/
+
+client: client.c sockets common
 	$(CC) $(COMPILER_FLAGS) -o client.o $(SOURCES) $(LINKER_FLAGS)
 
-debug: client.c sockets
+debug: client.c sockets common
 	$(CC) $(COMPILER_FLAGS) $(DEBUG_FLAGS) -o client.o client.c $(LINKER_FLAGS)
 
 clean:

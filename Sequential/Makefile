@@ -15,10 +15,13 @@ all: sequential
 sockets:
 	make -C ../sockets/
 
-sequential: sequentialServer.c sockets
+common:
+	make -C ../common/
+
+sequential: sequentialServer.c sockets common
 	$(CC) $(COMPILER_FLAGS) -o server.o $(SERVER_FILES) $(LINKER_FLAGS)
 
-debug: sequentialServer.c sockets
+debug: sequentialServer.c sockets common
 	$(CC) $(COMPILER_FLAGS) $(DEBUG_FLAGS) -o server.o $(SERVER_FILES) $(LINKER_FLAGS)
 
 clean:

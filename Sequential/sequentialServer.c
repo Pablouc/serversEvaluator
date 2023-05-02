@@ -27,7 +27,7 @@ void processRequests(void *arg) {
 
       strcpy(image_name, current.image);
       printf("current: %s\n", image_name);
-      sobel(image_name);
+      sobel(image_name, current.image_num < 100);
 
       free(image_name);
     }

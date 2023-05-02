@@ -40,7 +40,7 @@ void sobel_filter(uint8_t *img, int w, int h) {
   free(out);
 }
 
-void sobel(char *inputImg) {
+void sobel(char *inputImg, int should_save) {
 
   int w, h, c;
   uint8_t *img = stbi_load(inputImg, &w, &h, &c, 1);
@@ -51,7 +51,8 @@ void sobel(char *inputImg) {
 
   sobel_filter(img, w, h);
 
-  stbi_write_png(inputImg, w, h, 1, img, w);
+  if (should_save)
+    stbi_write_png(inputImg, w, h, 1, img, w);
 
   stbi_image_free(img);
 }

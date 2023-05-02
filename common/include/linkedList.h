@@ -14,6 +14,7 @@ struct linkedList {
 
 struct node {
   char image[50];
+  int image_num;
   struct node *next;
 };
 

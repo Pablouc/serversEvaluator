@@ -1,0 +1,53 @@
+[
+  {
+    "arguments": [
+      "/bin/gcc",
+      "-Wall",
+      "-Werror",
+      "-I../common/include",
+      "-c",
+      "sockets.c"
+    ],
+    "directory": "/home/kev/Documentos/os/proyectoII/serversEvaluator/sockets",
+    "file": "/home/kev/Documentos/os/proyectoII/serversEvaluator/sockets/sockets.c"
+  },
+  {
+    "arguments": [
+      "/bin/gcc",
+      "-Wall",
+      "-Werror",
+      "-I../common/include",
+      "-c",
+      "../common/linkedList.c"
+    ],
+    "directory": "/home/kev/Documentos/os/proyectoII/serversEvaluator/sockets",
+    "file": "/home/kev/Documentos/os/proyectoII/serversEvaluator/common/linkedList.c"
+  },
+  {
+    "arguments": [
+      "/bin/cc",
+      "-Wall",
+      "-Werror",
+      "-c",
+      "sobel.c"
+    ],
+    "directory": "/home/kev/Documentos/os/proyectoII/serversEvaluator/common",
+    "file": "/home/kev/Documentos/os/proyectoII/serversEvaluator/common/sobel.c"
+  },
+  {
+    "arguments": [
+      "/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-I../sockets/include",
+      "-I../common/include",
+      "-o",
+      "server.o",
+      "sequentialServer.c"
+    ],
+    "directory": "/home/kev/Documentos/os/proyectoII/serversEvaluator/Sequential",
+    "file": "/home/kev/Documentos/os/proyectoII/serversEvaluator/Sequential/sequentialServer.c",
+    "output": "/home/kev/Documentos/os/proyectoII/serversEvaluator/Sequential/server.o"
+  }
+]
