@@ -1,13 +1,14 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <time.h>
 #include <unistd.h>
 
-#include "./sobel.c"
 #include "linkedList.h"
+#include "sobel.h"
 #include "sockets.h"
 
 int cant_requests = 0;

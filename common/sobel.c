@@ -3,10 +3,12 @@
 #include <stdlib.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "./stb_image.h"
+#include "include/stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "./stb_image_write.h"
+#include "include/stb_image_write.h"
+
+#include "include/sobel.h"
 
 void sobel_filter(uint8_t *img, int w, int h) {
   int kernel_x[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};

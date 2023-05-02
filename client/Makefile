@@ -1,8 +1,8 @@
 INCLUDES = -I../common/include -I../sockets/include
 COMPILER_FLAGS = -Wall -Werror $(INCLUDES)
-LINKER_FLAGS = -L../sockets/ -lsockets -z muldefs
+LINKER_FLAGS = -L../sockets/ -lsockets -z muldefs -L../common -lcommon
 DEBUG_FLAGS = -O0 -g3
-SOURCES = client.c ../common/linkedList.c
+SOURCES = client.c
 
 default: all
 
