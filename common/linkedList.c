@@ -21,9 +21,11 @@ void insertAtEnd(struct linkedList *list, char *image) {
   newNode->next = NULL;
 
   if (list->head == NULL) {
+    newNode->image_num = 0;
     list->head = newNode;
     list->tail = newNode;
   } else {
+    newNode->image_num = list->tail->image_num + 1;
     list->tail->next = newNode;
     list->tail = newNode;
   }
