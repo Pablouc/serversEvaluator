@@ -6,7 +6,7 @@ DEBUG_FLAGS = -O0 -g3
 LINKER_FLAGS = -L../sockets/ -lsockets -z muldefs -L../common -lcommon -lm
 
 COMMON_FILES = ../common/linkedList.c
-SERVER_FILES = sequentialServer.c
+SERVER_FILES = threadServer.c
 
 default: all
 
@@ -15,10 +15,10 @@ all: sequential
 sockets:
 	make -C ../sockets/
 
-sequential: sequentialServer.c sockets
+sequential: threadServer.c sockets
 	$(CC) $(COMPILER_FLAGS) -o server.o $(SERVER_FILES) $(LINKER_FLAGS)
 
-debug: sequentialServer.c sockets
+debug: threadServer.c sockets
 	$(CC) $(COMPILER_FLAGS) $(DEBUG_FLAGS) -o server.o $(SERVER_FILES) $(LINKER_FLAGS)
 
 clean:
