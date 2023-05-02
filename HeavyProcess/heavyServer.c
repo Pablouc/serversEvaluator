@@ -19,14 +19,13 @@ struct imageInfo {
   char *imageName;
 };
 
-void processImage(void* arg){
-    struct imageInfo *args = (struct imageInfo *)arg;
+void processImage(int imageNum, char *imageName){
     char *image_name;
-    printf("%s this is the image\n",(char*)args->imageName);
+    printf("%s this is the image\n",(char*)imageName);
     image_name = malloc(sizeof(char) * 50);
-    strcpy(image_name, args->imageName);
+    strcpy(image_name, imageName);
     sem_post(&semName);
-    sobel(image_name,args->imageNum < 100);
+    sobel(image_name,imageNum < 100);
     return;
 }
 
@@ -41,20 +40,18 @@ void processRequests(void *arg) {
     if (list->head != NULL) {
       // printList(list);
       struct node current = pop(list);
-      image_name = malloc(sizeof(char) * 50);
-
-      strcpy(image_name, current.image);
-      printf("current: %s\n", image_name);
-      pthread_t Img;
-      sem_wait(&semName);
-
-      struct imageInfo args = {current.image_num,image_name};
-      pthread_create(&Img, NULL, (void* (*)(void*)) &processImage, &args); 
-
-      printf("Thread creado\n");
-      pthread_join(Img, NULL);
-
-      free(image_name);
+      
+      pid_t pid;
+      pid = fork();
+      if(pid == 0){ 
+        image_name = malloc(sizeof(char) * 50);
+        strcpy(image_name, current.image);
+        printf("current: %s\n", image_name);
+        sem_wait(&semName);
+        processImage(current.image_num,image_name);
+        free(image_name);
+        exit(0);
+      }
     }
   }
 }
