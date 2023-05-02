@@ -1,0 +1,28 @@
+[
+  {
+    "arguments": [
+      "/bin/gcc",
+      "-Wall",
+      "-Werror",
+      "-c",
+      "sockets.c"
+    ],
+    "directory": "/home/kev/Documentos/os/proyectoII/serversEvaluator/sockets",
+    "file": "/home/kev/Documentos/os/proyectoII/serversEvaluator/sockets/sockets.c"
+  },
+  {
+    "arguments": [
+      "/bin/cc",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-I../sockets/include",
+      "-o",
+      "client.o",
+      "client.c"
+    ],
+    "directory": "/home/kev/Documentos/os/proyectoII/serversEvaluator/client",
+    "file": "/home/kev/Documentos/os/proyectoII/serversEvaluator/client/client.c",
+    "output": "/home/kev/Documentos/os/proyectoII/serversEvaluator/client/client.o"
+  }
+]
