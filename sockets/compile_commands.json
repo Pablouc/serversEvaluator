@@ -1,0 +1,13 @@
+[
+  {
+    "arguments": [
+      "/bin/gcc",
+      "-Wall",
+      "-Werror",
+      "-c",
+      "sockets.c"
+    ],
+    "directory": "/home/kev/Documentos/os/proyectoII/serversEvaluator/sockets",
+    "file": "/home/kev/Documentos/os/proyectoII/serversEvaluator/sockets/sockets.c"
+  }
+]
