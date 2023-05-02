@@ -1,0 +1,26 @@
+[
+  {
+    "arguments": [
+      "/bin/cc",
+      "-Werror",
+      "-I./include",
+      "-I../",
+      "-c",
+      "mesh.c"
+    ],
+    "directory": "/home/kev/Documentos/os/proyectoII/serversEvaluator/mesh",
+    "file": "/home/kev/Documentos/os/proyectoII/serversEvaluator/mesh/mesh.c"
+  },
+  {
+    "arguments": [
+      "/bin/cc",
+      "-Werror",
+      "-I./include",
+      "-I../",
+      "-c",
+      "shmem_handler.c"
+    ],
+    "directory": "/home/kev/Documentos/os/proyectoII/serversEvaluator/mesh",
+    "file": "/home/kev/Documentos/os/proyectoII/serversEvaluator/mesh/shmem_handler.c"
+  }
+]
