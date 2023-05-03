@@ -12,6 +12,8 @@ struct threadParams {
   struct linkedList *memList;
   sem_t *sem;
   int alive;
+  void *shm_ptr;
+  int children_number;
 };
 
 int counter = 0;

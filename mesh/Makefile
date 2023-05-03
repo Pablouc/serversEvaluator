@@ -11,7 +11,7 @@ MESH_LIB = -I./include -L./ -lmesh
 FOR_TESTS +=\
 	${PWD}/../common/test/test_common.c -I${PWD}/../common/test ${MESH_LIB} ${LINKER_FLAGS}
 
-MESH_SOURCES = mesh.c shmem_handler.c
+MESH_SOURCES = mesh.c shmem_handler.c common/mesh_linkedList.c
 
 mesh: mesh.c
 	${CC} ${COMPILER_FLAGS} -c ${MESH_SOURCES} ${LINKER_FLAGS}

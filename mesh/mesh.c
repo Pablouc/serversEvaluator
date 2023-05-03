@@ -1,6 +1,4 @@
 #include "include/mesh.h"
-#include "include/mesh_emitter.h"
-#include "include/mesh_initializer.h"
 
 #define SHM_NAME "/shared_mem"
 
@@ -10,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "./common/structures.c"
+//#include "./common/structures.c"
 #include "include/shmem_handler.h"
 
 #define TEST_FILE_LENGTH 20
@@ -47,6 +45,26 @@ void unmap_shared_memory(void *shm_ptr) {
   shm_unmap(shm_ptr, size);
 }
 
+void swap_elements(struct process *process_array, int id_element_a, int id_element_b) {
+  struct process temp = process_array[id_element_a];
+  process_array[id_element_a] = process_array[id_element_b];
+  process_array[id_element_b] = temp;
+}
+
+void rotate_array(void *shm_ptr) {
+  struct process *process_array = (struct process *)(
+    shm_ptr + sizeof(struct shm_context)
+  );
+
+  struct shm_context *context = get_shm_context(shm_ptr);
+  int array_size = context->child_num;
+  int number_of_swaps = array_size / 2;
+
+  for (int i = 0; i < number_of_swaps; i++) {
+    swap_elements(process_array, i, array_size - 1 - i);
+  }
+}
+
 int get_heartbeat(void *shm_ptr) {
   struct shm_context *context = get_shm_context(shm_ptr);
   return context->heartbeat;
@@ -56,10 +74,8 @@ void *mesh_get_shm_ptr() {
    void *shm_ptr = initialize_shared_memory(1);
    struct shm_context *context = get_shm_context(shm_ptr);
   int initial_shm_size = sizeof(struct shm_context) + sizeof(struct process) * context->child_num;;
-  void *shm_ptr = initialize_shared_memory(initial_shm_size);
   return shm_ptr;
 }
-
 
 int close_shared_memory(int shm_id) {
   return shmem_close_shared_memory(shm_id);
@@ -94,26 +110,40 @@ void initialize_context(void *shm_ptr, int shm_id, int child_num)
         .heartbeat = 0,
         .shm_id = shm_id,
         .child_num = child_num,
+        .list = malloc(sizeof(struct mesh_node *))
     };
     memcpy(shm_ptr, &context, sizeof(struct shm_context));
+
+    struct shm_context *my_context = shm_ptr;
+    sem_init(&my_context->available_slots, 1, child_num);
+}
+
+sem_t *get_available_slots_sem(void * shm_ptr) {
+  struct shm_context *context = get_shm_context(shm_ptr);
+  return &(context->available_slots);
+}
+
+struct process *get_process_array(void * shm_ptr) {
+  return (struct process *)(
+    shm_ptr + sizeof(struct shm_context)
+  );
 }
 
 void initialize_processes(void *shm_ptr){
     struct shm_context *context= get_shm_context(shm_ptr);
     int child_number = context->child_num;
 
-    struct process processes_array[child_number];
+    struct process *processes_array = malloc(sizeof(struct process) * child_number);
 
     for(int i=0; i<child_number;i++){
         sem_init(&(processes_array[i].go), 1, 0);
     }
-
-    
     
     memcpy(
         shm_ptr + sizeof(struct shm_context),
         &processes_array,
         sizeof(processes_array));
+    free(processes_array);
 }
 
 
@@ -145,23 +175,6 @@ void *mesh_initialize(int child_num)
 
     return shm_ptr;
 }
-
-int set_children_id(void *shm_ptr, int processID, int index ){
-    struct shm_context *context= get_shm_context(shm_ptr);
-    int child_number = context->child_num;
-
-    struct process* process_array=  (struct process*)(shm_ptr + sizeof(struct shm_context));
-
-    for(int i=0; i<child_number;i++){
-      if(index == i){
-        (process_array[i].go);
-        return 1;
-      }
-    }
-    printf("Index not found");
-    return 0;
-}
-
 
 sem_t *mesh_get_sobel_semaphore(void *shm_ptr, int processID)
 {   
