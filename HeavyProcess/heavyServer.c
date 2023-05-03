@@ -58,14 +58,15 @@ void processRequests(void *arg) {
         image_name = malloc(sizeof(char) * 50);
         strcpy(image_name, current.image);
         processImage(image_num,image_name);
+        free(image_name);
 
         // Obtener el tiempo de finalización de la solicitud
         clock_gettime(CLOCK_MONOTONIC_RAW, &end);
 
         // Calcular el tiempo total de la solicitud
-        time_elapsed = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+        time_elapsed = (end.tv_sec - start.tv_sec) * 1000000000 + end.tv_nsec - start.tv_nsec;
 
-        free(image_name);
+
         exit(0);
       }
       // Actualizar los datos para el servidor secuencial
