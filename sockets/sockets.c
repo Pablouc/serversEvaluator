@@ -55,7 +55,7 @@ void receive_image(int sockfd, struct linkedList *list) {
   if (counter < 100)
     sprintf(image_name, "imagenrecibida%d.jpg", counter++);
   else
-    sprintf(image_name, "imagenrecibida100.jpg");
+    sprintf(image_name, "/tmp/imagenrecibida%d.jpg", counter++);
   fp = fopen(image_name, "wb");
   if (fp == NULL) {
     printf("Error al crear el archivo de imagen\n");

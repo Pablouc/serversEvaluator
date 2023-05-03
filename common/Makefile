@@ -1,5 +1,6 @@
 COMPILER_FLAGS = -Wall -Werror
 LINKER_FLAGS = -lm
+DEBUG_FLAGS = -O0 -g3
 
 default: all
 
@@ -9,7 +10,7 @@ sobel: sobel.c
 	$(CC) $(COMPILER_FLAGS) -c sobel.c $(LINKER_FLAGS)
 
 linkedList: linkedList.c
-	$(CC) $(COMPILER_FLAGS) -c linkedList.c $(LINKER_FLAGS)
+	$(CC) $(COMPILER_FLAGS) $(DEBUG_FLAGS) -c linkedList.c $(LINKER_FLAGS)
 
 build_library: sobel linkedList
 	ar rcs libcommon.a sobel.o linkedList.o

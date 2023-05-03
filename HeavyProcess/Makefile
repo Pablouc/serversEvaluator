@@ -1,12 +1,13 @@
 CC = gcc
 
-INCLUDES = -I../sockets/include -I../common/include
+INCLUDES = -I../sockets/include -I../common/include -I../stadistics/
 COMPILER_FLAGS = -Wall -Werror $(INCLUDES)
 DEBUG_FLAGS = -O0 -g3
-LINKER_FLAGS = -L../sockets/ -lsockets -z muldefs -L../common -lcommon -lm
+LINKER_FLAGS = -L../sockets/ -lsockets -z muldefs -L../common -lcommon -lm -lrt
 
 COMMON_FILES = ../common/linkedList.c
 SERVER_FILES = heavyServer.c
+STATISTICS_FILES = ../stadistics/memory_usage.c ../stadistics/statistics.c
 
 default: all
 
@@ -15,11 +16,17 @@ all: sequential
 sockets:
 	make -C ../sockets/
 
-sequential: heavyServer.c sockets
-	$(CC) $(COMPILER_FLAGS) -o server.o $(SERVER_FILES) $(LINKER_FLAGS)
+common:
+	make -C ../common
 
-debug: heavyServer.c sockets
-	$(CC) $(COMPILER_FLAGS) $(DEBUG_FLAGS) -o server.o $(SERVER_FILES) $(LINKER_FLAGS)
+statistics: $(STATISTICS_FILES)
+	$(CC) $(COMPILER_FLAGS) -c $(STATISTICS_FILES)
+
+sequential: heavyServer.c sockets common statistics
+	$(CC) $(COMPILER_FLAGS) -o server.o $(SERVER_FILES) statistics.o $(COMMON_FILES) $(LINKER_FLAGS)
+
+debug: heavyServer.c sockets common
+	$(CC) $(COMPILER_FLAGS) $(DEBUG_FLAGS) -o server.o $(SERVER_FILES) statistics.o $(COMMON_FILES) $(LINKER_FLAGS)
 
 clean:
 	rm -rf *.o imagenrecibida*

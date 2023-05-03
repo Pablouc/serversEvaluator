@@ -8,10 +8,18 @@
 void initList(struct linkedList *list) {
   list->head = NULL;
   list->size = 0;
+  list->image_num = 0;
   sem_init(&list->list_sem, 0, 1);
 }
 
 // function to insert a new node at the end of the list
+
+int get_image_num(struct linkedList *list) {
+  sem_wait(&list->list_sem);
+  int result = list->image_num;
+  sem_post(&list->list_sem);
+  return result;
+}
 
 void insertAtEnd(struct linkedList *list, char *image) {
   sem_wait(&list->list_sem);
@@ -19,17 +27,17 @@ void insertAtEnd(struct linkedList *list, char *image) {
   newNode = (struct node *)malloc(sizeof(struct node));
   strcpy(newNode->image, image);
   newNode->next = NULL;
+  newNode->image_num = list->image_num;
 
   if (list->head == NULL) {
-    newNode->image_num = 0;
     list->head = newNode;
     list->tail = newNode;
   } else {
-    newNode->image_num = list->tail->image_num + 1;
     list->tail->next = newNode;
     list->tail = newNode;
   }
 
+  list->image_num++;
   list->size++;
   sem_post(&list->list_sem);
 }
