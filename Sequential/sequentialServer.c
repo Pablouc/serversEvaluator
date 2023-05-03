@@ -26,7 +26,7 @@ void processRequests(void *arg) {
   int mem_usage;
 
   // Inicializar los datos para el servidor secuencial
-  struct serverData server = {0, 0, 0};
+  struct serverData server = {0, 0, 0, "secuencial"};
 
   while (args->alive || list->size > 0) {
     if (list->head != NULL) {
