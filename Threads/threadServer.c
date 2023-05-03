@@ -10,6 +10,8 @@
 #include "linkedList.h"
 #include "sobel.h"
 #include "sockets.h"
+#include "memory_usage.h"
+#include "statistics.h"
 
 int cant_requests = 0;
 sem_t semName;
@@ -38,6 +40,13 @@ void processRequests(void *arg) {
   struct linkedList *list = args->list;
 
   char *image_name;
+  struct timespec start, end;
+  long long time_elapsed;
+  int mem_usage;
+
+  // Inicializar los datos para el servidor hilos
+  struct serverData server = {0, 0, 0, "hilos"};
+
   while (args->alive || list->size > 0) {
     if (list->head != NULL) {
       // printList(list);
@@ -46,6 +55,10 @@ void processRequests(void *arg) {
 
       strcpy(image_name, current.image);
       printf("current: %s\n", image_name);
+
+      // Obtener el tiempo de inicio de la solicitud
+      clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+
       pthread_t Img;
       sem_wait(&semName);
 
@@ -55,9 +68,24 @@ void processRequests(void *arg) {
       printf("Thread creado\n");
       pthread_join(Img, NULL);
 
+      // Obtener el tiempo de finalización de la solicitud
+      clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+
+      // Calcular el tiempo total de la solicitud
+      time_elapsed = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+
       free(image_name);
+
+      // Actualizar los datos para el servidor secuencial
+      server.cant_solicitudes++;
+      server.tiempo_ejecucion_total += time_elapsed;
+      mem_usage = getCurrentRSS();
+      server.consumo_memoria_total += mem_usage;
     }
   }
+  // Escribir los datos en el archivo CSV
+  writeCSV(server);
+  pthread_exit(NULL);
 }
 
 int main() {
